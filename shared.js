@@ -17,7 +17,7 @@
 
     // Configuration
     const CONFIG = {
-        socketUrl: 'http://localhost:5000',
+        socketUrl: 'http://10.1.27.216:5000',
         energyThreshold: 6000,
         wasteThreshold: 80,
         solarLowThreshold: 2000
@@ -259,3 +259,4 @@
     }
 
 })();
+

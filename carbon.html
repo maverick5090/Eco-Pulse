@@ -211,10 +211,11 @@
 
             // Fallback to socket directly if shared.js isn't on the page
             if (typeof io !== 'undefined') {
-                const socket = io('http://localhost:5000');
+                const socket = io('http://10.1.27.216:5000');
                 socket.on('campusData', updateRealtime);
             }
         })();
     </script>
 </body>
 </html>
+

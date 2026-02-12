@@ -2,6 +2,8 @@
 
 A comprehensive web-based system for monitoring and managing campus sustainability with role-based dashboards, real-time energy tracking, and gamified student engagement.
 
+Demo: `https://maverick5090.github.io/Eco-Pulse/`
+
 ## 🚀 Quick Start
 
 ### Prerequisites
