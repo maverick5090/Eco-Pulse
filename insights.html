@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sustainability Insights - Eco Pulse</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="navbar-injector.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #e8f4f8;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        nav {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0 24px;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a5490;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #1a5490;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 16px;
+        }
+
+        h1 {
+            color: #1a5490;
+            text-align: center;
+            margin-bottom: 16px;
+            font-size: 1.75rem;
+            font-weight: 600;
+        }
+
+        .ai-label {
+            text-align: center;
+            color: #666;
+            font-size: 0.875rem;
+            margin-bottom: 32px;
+            font-style: italic;
+        }
+
+        .ai-label strong {
+            color: #1a5490;
+        }
+
+        .recommendations-section {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-left: 4px solid #1a5490;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 1.125rem;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .recommendations-list {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .recommendation {
+            padding: 16px;
+            background: #f9f9f9;
+            border-left: 3px solid #4a90e2;
+            border-radius: 4px;
+        }
+
+        .recommendation.priority-high {
+            border-left-color: #e74c3c;
+            background: #fff5f5;
+        }
+
+        .recommendation.priority-medium {
+            border-left-color: #f7b801;
+            background: #fffbf0;
+        }
+
+        .recommendation.priority-low {
+            border-left-color: #4ecdc4;
+            background: #f0fdfc;
+        }
+
+        .recommendation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .recommendation-title {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9375rem;
+        }
+
+        .recommendation-priority {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .priority-high .recommendation-priority {
+            background: #e74c3c;
+            color: #fff;
+        }
+
+        .priority-medium .recommendation-priority {
+            background: #f7b801;
+            color: #fff;
+        }
+
+        .priority-low .recommendation-priority {
+            background: #4ecdc4;
+            color: #fff;
+        }
+
+        .recommendation-message {
+            color: #666;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+
+        .recommendation-reason {
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid #e0e0e0;
+            font-size: 0.75rem;
+            color: #999;
+            font-style: italic;
+        }
+
+        .no-recommendations {
+            padding: 24px;
+            text-align: center;
+            color: #666;
+            font-size: 0.875rem;
+        }
+
+        .metrics-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                height: auto;
+                padding: 16px 0;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+                margin-top: 16px;
+            }
+
+            .container {
+                padding: 24px 12px;
+            }
+
+            .metrics-summary {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <div class="container">
+        <h1>Sustainability Insights</h1>
+        <div class="ai-label">
+            <strong>Rule-Based AI Assistance</strong> - Smart recommendations based on campus energy patterns
+        </div>
+
+        <div class="metrics-summary">
+            <div class="metric-card">
+                <div class="metric-label">Energy Usage</div>
+                <div class="metric-value" id="summaryEnergy">-</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Solar Generation</div>
+                <div class="metric-value" id="summarySolar">-</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Waste Level</div>
+                <div class="metric-value" id="summaryWaste">-</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-label">Carbon Score</div>
+                <div class="metric-value" id="summaryCarbon">-</div>
+            </div>
+        </div>
+
+        <div class="recommendations-section">
+            <div class=\"section-title\">Rule-Based AI Assistance</div>
+            <div class="recommendations-list" id="recommendationsList">
+                <div class="no-recommendations">Loading recommendations...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            const CONFIG = {
+                socketUrl: 'http://localhost:5000',
+                energyThreshold: 6000,
+                wasteThreshold: 80,
+                solarLowThreshold: 2000
+            };
+
+            const elements = {
+                summaryEnergy: document.getElementById('summaryEnergy'),
+                summarySolar: document.getElementById('summarySolar'),
+                summaryWaste: document.getElementById('summaryWaste'),
+                summaryCarbon: document.getElementById('summaryCarbon'),
+                recommendationsList: document.getElementById('recommendationsList')
+            };
+
+            function initSocket() {
+                const socket = io(CONFIG.socketUrl);
+                
+                socket.on('connect', () => {
+                    console.log('Connected to server');
+                });
+
+                socket.on('disconnect', () => {
+                    console.log('Disconnected from server');
+                });
+
+                socket.on('campusData', handleCampusData);
+                
+                return socket;
+            }
+
+            // Rule-Based AI: Generate recommendations using predefined rules
+            function generateRecommendations(data) {
+                const recommendations = [];
+
+                // Rule 1: High Energy Usage During Peak Hours
+                if (data.energyUsage > CONFIG.energyThreshold) {
+                    recommendations.push({
+                        priority: 'high',
+                        title: 'Reduce Energy Usage During Peak Hours',
+                        message: 'Consider reducing AC usage and optimizing HVAC systems during peak hours (12 PM - 3 PM). Shift non-essential operations to off-peak times.',
+                        reason: `Energy usage (${data.energyUsage.toLocaleString()} kWh) exceeds threshold (${CONFIG.energyThreshold.toLocaleString()} kWh)`
+                    });
+                }
+
+                // Rule 1b: Turn Off Unused Devices
+                recommendations.push({
+                    priority: 'medium',
+                    title: 'Turn Off Unused Devices',
+                    message: 'Ensure all unnecessary devices are powered down during non-business hours. Enable automated shutdown schedules for common areas.',
+                    reason: 'Device efficiency optimization can reduce baseline consumption by 10-15%'
+                });
+
+                // Rule 2: Shift Usage to Solar Hours
+                if (data.solarGeneration < CONFIG.solarLowThreshold) {
+                    recommendations.push({
+                        priority: 'medium',
+                        title: 'Shift Usage to Solar Hours',
+                        message: 'Solar generation is low. Shift high-energy tasks to peak solar hours (10 AM - 2 PM) when renewable generation is strongest.',
+                        reason: `Solar generation (${data.solarGeneration.toLocaleString()} kWh) is below optimal threshold (${CONFIG.solarLowThreshold.toLocaleString()} kWh)`
+                    });
+                }
+
+                // Rule 3: High Waste Level
+                if (data.wasteLevel > CONFIG.wasteThreshold) {
+                    recommendations.push({
+                        priority: 'high',
+                        title: 'Schedule Waste Pickup',
+                        message: 'Waste level is critical. Schedule immediate pickup to prevent overflow.',
+                        reason: `Waste level (${data.wasteLevel}%) exceeds threshold (${CONFIG.wasteThreshold}%)`
+                    });
+                }
+
+                // Rule 4: Energy vs Solar Balance
+                if (data.energyUsage > data.solarGeneration * 2) {
+                    recommendations.push({
+                        priority: 'medium',
+                        title: 'Improve Energy Balance',
+                        message: 'Energy consumption is more than double solar generation. Consider implementing energy-saving measures or expanding solar capacity.',
+                        reason: `Energy usage (${data.energyUsage.toLocaleString()} kWh) is ${(data.energyUsage / data.solarGeneration).toFixed(1)}x solar generation (${data.solarGeneration.toLocaleString()} kWh)`
+                    });
+                }
+
+                // Rule 5: Low Carbon Score
+                if (data.carbonScore < 70) {
+                    recommendations.push({
+                        priority: 'medium',
+                        title: 'Improve Carbon Score',
+                        message: 'Carbon score is below optimal. Focus on reducing energy consumption and increasing renewable energy usage.',
+                        reason: `Carbon score (${data.carbonScore}/100) is below optimal threshold (70)`
+                    });
+                }
+
+                // Rule 6: Good Performance
+                if (data.energyUsage <= CONFIG.energyThreshold && 
+                    data.solarGeneration >= CONFIG.solarLowThreshold && 
+                    data.wasteLevel <= CONFIG.wasteThreshold && 
+                    data.carbonScore >= 70) {
+                    recommendations.push({
+                        priority: 'low',
+                        title: 'Excellent Performance',
+                        message: 'All metrics are within optimal ranges. Continue current practices to maintain sustainability goals.',
+                        reason: 'All metrics are within optimal thresholds'
+                    });
+                }
+
+                return recommendations;
+            }
+
+            function updateSummary(data) {
+                elements.summaryEnergy.textContent = data.energyUsage.toLocaleString() + ' kWh';
+                elements.summarySolar.textContent = data.solarGeneration.toLocaleString() + ' kWh';
+                elements.summaryWaste.textContent = data.wasteLevel + '%';
+                elements.summaryCarbon.textContent = data.carbonScore + '/100';
+            }
+
+            function renderRecommendations(recommendations) {
+                if (recommendations.length === 0) {
+                    elements.recommendationsList.innerHTML = '<div class="no-recommendations">No recommendations at this time</div>';
+                    return;
+                }
+
+                // Sort by priority: high, medium, low
+                const priorityOrder = { high: 0, medium: 1, low: 2 };
+                recommendations.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
+
+                elements.recommendationsList.innerHTML = recommendations
+                    .map(rec => `
+                        <div class="recommendation priority-${rec.priority}">
+                            <div class="recommendation-header">
+                                <div class="recommendation-title">${rec.title}</div>
+                                <div class="recommendation-priority">${rec.priority}</div>
+                            </div>
+                            <div class="recommendation-message">${rec.message}</div>
+                            <div class="recommendation-reason">Rule-based logic: ${rec.reason}</div>
+                        </div>
+                    `)
+                    .join('');
+            }
+
+            function handleCampusData(data) {
+                updateSummary(data);
+                const recommendations = generateRecommendations(data);
+                renderRecommendations(recommendations);
+            }
+
+            initSocket();
+        })();
+    </script>
+</body>
+</html>

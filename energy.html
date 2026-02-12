@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Energy & Solar Monitoring - Eco Pulse</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="navbar-injector.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #e8f4f8;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        nav {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0 24px;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a5490;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #1a5490;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 16px;
+        }
+
+        h1 {
+            color: #1a5490;
+            text-align: center;
+            margin-bottom: 32px;
+            font-size: 1.75rem;
+            font-weight: 600;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-top: 4px solid #999;
+            padding: 24px;
+        }
+
+        .card-energy {
+            border-top-color: #ff6b35;
+        }
+
+        .card-solar {
+            border-top-color: #4ecdc4;
+        }
+
+        .card-title {
+            font-size: 0.875rem;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .card-energy .card-title {
+            color: #ff6b35;
+        }
+
+        .card-solar .card-title {
+            color: #4ecdc4;
+        }
+
+        .card-value {
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .card-unit {
+            font-size: 1rem;
+            color: #999;
+            margin-left: 4px;
+        }
+
+        .chart-container {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-left: 4px solid #1a5490;
+            padding: 24px;
+            margin-bottom: 32px;
+        }
+
+        .chart-title {
+            font-size: 1.125rem;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .alert-section {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-left: 4px solid #e74c3c;
+            padding: 24px;
+        }
+
+        .alert-title {
+            font-size: 1.125rem;
+            color: #333;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .alert-item {
+            padding: 12px;
+            background: #fff5f5;
+            border-left: 3px solid #e74c3c;
+            font-size: 0.875rem;
+            color: #333;
+        }
+
+        .alert-empty {
+            padding: 12px;
+            color: #666;
+            font-size: 0.875rem;
+            font-style: italic;
+        }
+
+        canvas {
+            max-height: 400px;
+        }
+
+        @media (max-width: 768px) {
+            .nav-container {
+                flex-direction: column;
+                height: auto;
+                padding: 16px 0;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+                margin-top: 16px;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .container {
+                padding: 24px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <div class="container">
+        <h1>Energy & Solar Monitoring</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 32px; font-size: 0.95rem;">📊 Simulated real-time energy data</p>
+
+        <div class="cards-grid">
+            <div class="card card-energy">
+                <div class="card-title">Energy Usage</div>
+                <div class="card-value">
+                    <span id="energyUsage">-</span>
+                    <span class="card-unit">kWh</span>
+                </div>
+            </div>
+
+            <div class="card card-solar">
+                <div class="card-title">Solar Generation</div>
+                <div class="card-value">
+                    <span id="solarGeneration">-</span>
+                    <span class="card-unit">kWh</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">⚡ Energy Usage & Solar Generation Over Time</div>
+            <canvas id="energyChart"></canvas>
+        </div>
+
+        <div class="alert-section">
+            <div class="alert-title">Alerts</div>
+            <div class="alert-list" id="alertList">
+                <div class="alert-empty">No alerts at this time</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            // Configuration & constants
+            const CONFIG = {
+                socketUrl: 'http://localhost:5000',
+                maxDataPoints: 20,
+                energyHighThreshold: 6000,     // Alert if energy > 6000 kWh
+                energyLowThreshold: 1000,      // Alert if energy < 1000 kWh
+                solarLowThreshold: 1500,       // Alert if solar < 1500 kWh
+                consumptionRatio: 2,           // Alert if energy > solar * 2
+                fallbackDataInterval: 5000     // Generate fallback data every 5s if no socket
+            };
+
+            const elements = {
+                energyUsage: document.getElementById('energyUsage'),
+                solarGeneration: document.getElementById('solarGeneration'),
+                chartCanvas: document.getElementById('energyChart'),
+                alertList: document.getElementById('alertList')
+            };
+
+            let chart;
+            let alerts = [];
+            let socket;
+            let isConnected = false;
+            let fallbackTimer;
+
+            /**
+             * Initialize Chart.js line chart for energy vs solar
+             */
+            function initChart() {
+                const ctx = elements.chartCanvas.getContext('2d');
+                
+                return new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: [],
+                        datasets: [
+                            {
+                                label: 'Energy Usage (kWh)',
+                                data: [],
+                                borderColor: '#ff6b35',
+                                backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true,
+                                pointRadius: 4,
+                                pointBackgroundColor: '#ff6b35'
+                            },
+                            {
+                                label: 'Solar Generation (kWh)',
+                                data: [],
+                                borderColor: '#4ecdc4',
+                                backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                                borderWidth: 2,
+                                tension: 0.4,
+                                fill: true,
+                                pointRadius: 4,
+                                pointBackgroundColor: '#4ecdc4'
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                min: 0,
+                                max: 8000,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString() + ' kWh';
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top'
+                            },
+                            filler: {
+                                propagate: true
+                            }
+                        },
+                        animation: {
+                            duration: 300
+                        }
+                    }
+                });
+            }
+
+            /**
+             * Update metric cards with current values
+             */
+            function updateCards(data) {
+                if (elements.energyUsage && data.energyUsage !== undefined) {
+                    elements.energyUsage.textContent = data.energyUsage.toLocaleString();
+                }
+                if (elements.solarGeneration && data.solarGeneration !== undefined) {
+                    elements.solarGeneration.textContent = data.solarGeneration.toLocaleString();
+                }
+            }
+
+            /**
+             * Update chart with new energy and solar data points
+             */
+            function updateChart(data) {
+                if (!chart || !chart.data) return;
+
+                try {
+                    const timeLabel = new Date().toLocaleTimeString();
+                    
+                    // Add new data points
+                    chart.data.labels.push(timeLabel);
+                    chart.data.datasets[0].data.push(data.energyUsage || 0);
+                    chart.data.datasets[1].data.push(data.solarGeneration || 0);
+
+                    // Remove oldest data if exceeding max points
+                    if (chart.data.labels.length > CONFIG.maxDataPoints) {
+                        chart.data.labels.shift();
+                        chart.data.datasets.forEach(dataset => {
+                            if (dataset.data.length > CONFIG.maxDataPoints) {
+                                dataset.data.shift();
+                            }
+                        });
+                    }
+
+                    // Update chart without animation for smooth real-time updates
+                    chart.update('none');
+                    console.log('[CHART] Updated with Energy: ' + data.energyUsage + ' kWh, Solar: ' + data.solarGeneration + ' kWh');
+                } catch (error) {
+                    console.error('[CHART ERROR]', error);
+                }
+            }
+
+            /**
+             * Evaluate data against thresholds and generate alerts
+             */
+            function updateAlerts(data) {
+                alerts = [];
+
+                // Alert: High energy usage
+                if (data.energyUsage > CONFIG.energyHighThreshold) {
+                    alerts.push(`⚠️ High Energy Usage: ${data.energyUsage.toLocaleString()} kWh exceeds threshold (${CONFIG.energyHighThreshold.toLocaleString()} kWh)`);
+                }
+
+                // Alert: Low energy usage
+                if (data.energyUsage < CONFIG.energyLowThreshold) {
+                    alerts.push(`📉 Low Energy Usage: ${data.energyUsage.toLocaleString()} kWh - Campus may be under capacity`);
+                }
+
+                // Alert: Low solar generation
+                if (data.solarGeneration < CONFIG.solarLowThreshold) {
+                    alerts.push(`☁️ Low Solar Generation: ${data.solarGeneration.toLocaleString()} kWh is below optimal (${CONFIG.solarLowThreshold.toLocaleString()} kWh)`);
+                }
+
+                // Alert: Consumption exceeds solar generation
+                if (data.energyUsage > data.solarGeneration * CONFIG.consumptionRatio) {
+                    const ratio = (data.energyUsage / data.solarGeneration).toFixed(1);
+                    alerts.push(`⚡ High Consumption Ratio: Energy usage is ${ratio}x solar generation - consider reducing usage`);
+                }
+
+                renderAlerts();
+            }
+
+            /**
+             * Render alert items in the DOM
+             */
+            function renderAlerts() {
+                if (!elements.alertList) return;
+
+                if (alerts.length === 0) {
+                    elements.alertList.innerHTML = '<div class="alert-empty">✓ No alerts - campus energy is optimal</div>';
+                    return;
+                }
+
+                elements.alertList.innerHTML = alerts
+                    .map(alert => `<div class="alert-item">${alert}</div>`)
+                    .join('');
+            }
+
+            /**
+             * Generate simulated fallback data when socket unavailable
+             */
+            function generateFallbackData() {
+                return {
+                    energyUsage: Math.floor(Math.random() * 5000) + 2000,      // 2000-7000 kWh
+                    solarGeneration: Math.floor(Math.random() * 3000) + 1000   // 1000-4000 kWh
+                };
+            }
+
+            /**
+             * Process incoming campus data from backend
+             */
+            function handleCampusData(data) {
+                console.log('[DATA] Received campus data:', data);
+                updateCards(data);
+                updateChart(data);
+                updateAlerts(data);
+            }
+
+            /**
+             * Initialize Socket.IO connection with event handlers
+             */
+            function initSocket() {
+                try {
+                    socket = io(CONFIG.socketUrl, {
+                        reconnection: true,
+                        reconnectionDelay: 1000,
+                        reconnectionDelayMax: 5000,
+                        reconnectionAttempts: Infinity
+                    });
+
+                    // Connected to server
+                    socket.on('connect', function() {
+                        isConnected = true;
+                        console.log('[SOCKET] Connected to server');
+                        
+                        // Clear fallback timer when connected
+                        if (fallbackTimer) {
+                            clearInterval(fallbackTimer);
+                            fallbackTimer = null;
+                        }
+                    });
+
+                    // Lost connection to server
+                    socket.on('disconnect', function() {
+                        isConnected = false;
+                        console.log('[SOCKET] Disconnected from server - starting fallback data');
+                        
+                        // Start generating fallback data
+                        if (!fallbackTimer) {
+                            fallbackTimer = setInterval(function() {
+                                const fallbackData = generateFallbackData();
+                                handleCampusData(fallbackData);
+                            }, CONFIG.fallbackDataInterval);
+                        }
+                    });
+
+                    // Connection error
+                    socket.on('error', function(error) {
+                        console.error('[SOCKET ERROR]', error);
+                    });
+
+                    // Listen for campus data broadcasts from server
+                    socket.on('campusData', handleCampusData);
+
+                } catch (error) {
+                    console.error('[SOCKET INIT ERROR]', error);
+                    // Start fallback data if socket init fails
+                    if (!fallbackTimer) {
+                        fallbackTimer = setInterval(function() {
+                            const fallbackData = generateFallbackData();
+                            handleCampusData(fallbackData);
+                        }, CONFIG.fallbackDataInterval);
+                    }
+                }
+            }
+
+            /**
+             * Initialize the page
+             */
+            function init() {
+                console.log('[INIT] Initializing Energy & Solar Monitoring page');
+                
+                // Initialize chart first
+                chart = initChart();
+                console.log('[INIT] Chart initialized');
+
+                // Try to connect to socket
+                initSocket();
+                console.log('[INIT] Socket connection initiated');
+
+                // If no connection after 2 seconds, start fallback
+                setTimeout(function() {
+                    if (!isConnected && !fallbackTimer) {
+                        console.log('[INIT] No socket connection after 2s - starting fallback data');
+                        fallbackTimer = setInterval(function() {
+                            const fallbackData = generateFallbackData();
+                            handleCampusData(fallbackData);
+                        }, CONFIG.fallbackDataInterval);
+                    }
+                }, 2000);
+            }
+
+            // Start the page when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
+</body>
+</html>

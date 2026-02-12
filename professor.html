@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco Pulse - Professor Dashboard</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="navbar-injector.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #e8f4f8;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        nav {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a5490;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #1a5490;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-info {
+            text-align: right;
+            font-size: 0.9rem;
+        }
+
+        .user-info .username {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .user-info .role {
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #d32f2f;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #1a5490;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 32px;
+        }
+
+        /* Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .metric-card h3 {
+            color: #666;
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .metric-unit {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .energy { color: #ff9800; }
+        .solar { color: #4caf50; }
+        .waste { color: #f44336; }
+        .carbon { color: #2196f3; }
+
+        /* Charts Section */
+        .charts-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 32px;
+        }
+
+        .charts-section h2 {
+            color: #333;
+            margin-bottom: 24px;
+            font-size: 1.3rem;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 32px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+
+        .chart-container canvas {
+            max-width: 100%;
+        }
+
+        /* Read-Only Notice */
+        .read-only-notice {
+            background: #e3f2fd;
+            border: 1px solid #90caf9;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            color: #1565c0;
+            font-size: 0.95rem;
+        }
+
+        .simulation-badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+
+        /* Data Table */
+        .data-section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .data-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.3rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:hover {
+            background: #f9f9f9;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .status-inactive {
+            background: #f1f1f1;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div>
+            <h1>Campus Dashboard</h1>
+            <p class="subtitle">View campus-wide simulated energy, solar, waste, and carbon metrics</p>
+        </div>
+
+        <div class="read-only-notice">
+            📊 <strong>Read-only view:</strong> This dashboard displays simulated campus data. All metrics are simulated values for demonstration purposes.
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="dashboard-grid">
+            <div class="metric-card">
+                <h3>Energy Usage</h3>
+                <div class="metric-value energy" id="energyValue">1,245</div>
+                <div class="metric-unit">kWh (today)</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Solar Generation</h3>
+                <div class="metric-value solar" id="solarValue">892</div>
+                <div class="metric-unit">kWh (today)</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Waste Level</h3>
+                <div class="metric-value waste" id="wasteValue">62</div>
+                <div class="metric-unit">% of bin capacity</div>
+            </div>
+
+            <div class="metric-card">
+                <h3>Carbon Score</h3>
+                <div class="metric-value carbon" id="carbonValue">7.2</div>
+                <div class="metric-unit">tonnes CO₂ equivalent</div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <h2>Trend Analysis</h2>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <canvas id="energyChart" role="img" aria-label="Energy Usage Trend Chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <canvas id="balanceChart" role="img" aria-label="Generation vs Demand Chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Section -->
+        <div class="data-section">
+            <h2>Active Energy Sources</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Source</th>
+                        <th>Current Output</th>
+                        <th>Status</th>
+                        <th>Efficiency</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Solar Array</td>
+                        <td>456 kW</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td>94%</td>
+                    </tr>
+                    <tr>
+                        <td>Wind Turbine</td>
+                        <td>238 kW</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td>87%</td>
+                    </tr>
+                    <tr>
+                        <td>Battery Storage</td>
+                        <td>198 kW (discharge)</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td>92%</td>
+                    </tr>
+                    <tr>
+                        <td>Grid Connection</td>
+                        <td>0 kW</td>
+                        <td><span class="status-badge status-inactive">Standby</span></td>
+                        <td>--</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // PROFESSOR/ADMIN DASHBOARD - READ-ONLY CAMPUS VIEW
+        // Displays simulated campus-wide energy, solar, waste, and carbon metrics
+        // No student controls - display only
+        // All data is simulated for demonstration purposes
+
+        // Campus simulation state object
+        let campusState = {
+            timestamp: new Date().toISOString(),
+            energyUsage: 1245,
+            solarGeneration: 892,
+            wasteLevel: 62,
+            carbonScore: 7.2,
+            gridStatus: 'disconnected'
+        };
+
+        // CHART INSTANCES (stored globally for updating)
+        let energyChart = null;
+        let balanceChart = null;
+
+        // ROLE-BASED PAGE PROTECTION
+        // Security: Only professors/admins can access this dashboard
+        // Students attempting to access will be redirected to login
+        function initializeUser() {
+            const username = localStorage.getItem('username');
+            const userRole = localStorage.getItem('userRole');
+
+            if (!username || userRole !== 'professor') {
+                console.log('[SECURITY] Unauthorized access attempt to professor dashboard');
+                window.location.href = 'login.html';
+                return;
+            }
+
+            console.log(`[SECURITY] Professor '${username}' accessed admin dashboard`);
+        }
+
+        // CAMPUS METRICS UPDATE (SIMULATED)
+        // Generates realistic simulated data for campus-wide metrics
+        function updateMetrics() {
+            // Energy usage: realistic campus consumption pattern (800-1500 kWh)
+            campusState.energyUsage = Math.floor(1000 + Math.random() * 500);
+
+            // Solar generation: depends on time of day (rough simulation)
+            campusState.solarGeneration = Math.floor(700 + Math.random() * 300);
+
+            // Waste level: gradually increasing (0-100%)
+            campusState.wasteLevel = Math.min(100, Math.floor(55 + Math.random() * 20));
+
+            // Carbon score: based on fossil fuel usage proportion (7-8 tonnes CO₂)
+            campusState.carbonScore = (7 + Math.random() * 0.5).toFixed(1);
+
+            // Update DOM elements with new values
+            document.getElementById('energyValue').textContent = campusState.energyUsage.toLocaleString();
+            document.getElementById('solarValue').textContent = campusState.solarGeneration.toLocaleString();
+            document.getElementById('wasteValue').textContent = campusState.wasteLevel;
+            document.getElementById('carbonValue').textContent = campusState.carbonScore;
+
+            // Update charts with new data
+            updateCharts();
+
+            campusState.timestamp = new Date().toISOString();
+        }
+
+        // INITIALIZE CHARTS
+        // Create Chart.js instances with simulated data
+        function initializeCharts() {
+            if (typeof Chart === 'undefined') {
+                console.error('[ERROR] Chart.js not loaded yet');
+                return;
+            }
+
+            const energyCtx = document.getElementById('energyChart');
+            const balanceCtx = document.getElementById('balanceChart');
+
+            // Energy usage trend chart
+            if (energyCtx && energyCtx.getContext) {
+                try {
+                    energyChart = new Chart(energyCtx, {
+                        type: 'line',
+                        data: {
+                            labels: ['6am', '9am', '12pm', '3pm', '6pm', '9pm', '12am'],
+                            datasets: [{
+                                label: 'Energy Usage (kWh)',
+                                data: [450, 520, 890, 1150, 980, 620, 380],
+                                borderColor: '#ff9800',
+                                backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                                tension: 0.4,
+                                fill: true,
+                                borderWidth: 2,
+                                pointRadius: 4,
+                                pointBackgroundColor: '#ff9800'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: true, position: 'top' }
+                            },
+                            scales: {
+                                y: { 
+                                    beginAtZero: true,
+                                    min: 0,
+                                    max: 1500,
+                                    title: { display: true, text: 'Energy (kWh)' } 
+                                }
+                            }
+                        }
+                    });
+                    console.log('[CHARTS] Energy usage chart initialized');
+                } catch (e) {
+                    console.error('[ERROR] Failed to initialize energy chart:', e);
+                }
+            }
+
+            // Energy generation vs demand chart
+            if (balanceCtx && balanceCtx.getContext) {
+                try {
+                    balanceChart = new Chart(balanceCtx, {
+                        type: 'bar',
+                        data: {
+                            labels: ['Solar', 'Wind', 'Battery', 'Demand'],
+                            datasets: [{
+                                label: 'Power Output (kW)',
+                                data: [456, 238, 198, campusState.energyUsage],
+                                backgroundColor: ['#4caf50', '#2196f3', '#ff9800', '#f44336'],
+                                borderRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: true, position: 'top' }
+                            },
+                            scales: {
+                                y: { 
+                                    beginAtZero: true,
+                                    max: 1500,
+                                    title: { display: true, text: 'Power (kW)' } 
+                                }
+                            }
+                        }
+                    });
+                    console.log('[CHARTS] Balance chart initialized');
+                } catch (e) {
+                    console.error('[ERROR] Failed to initialize balance chart:', e);
+                }
+            }
+        }
+
+        // UPDATE CHARTS
+        // Refresh chart data with simulated values
+        function updateCharts() {
+            if (!energyChart || !balanceChart) {
+                return; // Charts not initialized yet
+            }
+
+            try {
+                // Update energy usage trend (shift data left, add new value)
+                const energyData = energyChart.data.datasets[0].data;
+                energyData.shift(); // Remove first value
+                energyData.push(campusState.energyUsage); // Add new simulated value
+                energyChart.update('none'); // Update without animation
+
+                // Update balance chart with new demand
+                balanceChart.data.datasets[0].data[3] = campusState.energyUsage;
+                balanceChart.update('none');
+
+                console.log('[CHARTS] Updated with new simulated data');
+            } catch (e) {
+                console.error('[ERROR] Failed to update charts:', e);
+            }
+        }
+
+        // LOGOUT
+        // Clears all session data and redirects to login
+        function logout() {
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // INITIALIZATION SEQUENCE
+        // 1. FIRST: Verify user role (blocks unauthorized access immediately)
+        // 2. Load simulated campus metrics
+        // 3. Initialize charts and displays (with slight delay for Chart.js to load)
+        // 4. Start metrics refresh loop
+        initializeUser();
+        updateMetrics();
+
+        // Delay chart initialization slightly to ensure Chart.js is fully loaded
+        setTimeout(() => {
+            try {
+                initializeCharts();
+                console.log('[READY] Charts initialized successfully');
+            } catch (e) {
+                console.error('[ERROR] Chart initialization failed:', e);
+            }
+        }, 100);
+
+        // Refresh campus metrics and charts every 3 seconds (faster simulation)
+        // In a real system, this would connect to actual campus sensor data via WebSocket
+        setInterval(updateMetrics, 3000);
+        console.log('[READY] Professor dashboard initialized successfully');
+    </script>
+</body>
+</html>

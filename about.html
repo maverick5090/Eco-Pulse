@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Eco Pulse</title>
+    <script src="navbar-injector.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        /* Navigation Bar Styles */
+        .navbar {
+            background: #fff;
+            border-bottom: 2px solid #e0e0e0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+        }
+
+        .navbar-brand {
+            flex-shrink: 0;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: #1a5490;
+            font-weight: 600;
+            font-size: 1.3rem;
+            transition: color 0.3s;
+        }
+
+        .logo:hover {
+            color: #0d3d6b;
+        }
+
+        .logo-icon {
+            font-size: 1.5rem;
+        }
+
+        .navbar-links {
+            display: flex;
+            gap: 8px;
+            list-style: none;
+            flex: 1;
+            margin: 0 32px;
+            padding: 0;
+        }
+
+        .nav-link {
+            display: inline-block;
+            padding: 8px 16px;
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            font-size: 0.95rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link:hover {
+            color: #1a5490;
+            background: #f0f4f8;
+        }
+
+        .nav-link.active {
+            color: #1a5490;
+            background: #e3f2fd;
+            font-weight: 600;
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 16px;
+            right: 16px;
+            height: 3px;
+            background: #1a5490;
+            border-radius: 2px 2px 0 0;
+        }
+
+        .navbar-user {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-shrink: 0;
+        }
+
+        .user-role {
+            font-size: 0.9rem;
+            color: #666;
+            padding: 6px 12px;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #d32f2f;
+        }
+
+        /* Page Content */
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 48px 24px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #1a5490;
+            margin-bottom: 24px;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: #333;
+            margin-top: 32px;
+            margin-bottom: 16px;
+        }
+
+        p {
+            color: #666;
+            line-height: 1.8;
+            margin-bottom: 16px;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            margin-top: 32px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .feature-card h3 {
+            color: #1a5490;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+            .navbar-container {
+                padding: 0 16px;
+                height: auto;
+                flex-wrap: wrap;
+            }
+
+            .navbar-links {
+                margin: 12px 0;
+                gap: 4px;
+                flex-basis: 100%;
+                order: 3;
+                flex-wrap: wrap;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-container"></div>
+<!-- Main Content -->
+    <div class="container">
+        <h1>About Eco Pulse</h1>
+        
+        <p>
+            <strong>Eco Pulse</strong> is a comprehensive net zero campus simulation platform designed to help educational institutions 
+            monitor, understand, and optimize their environmental impact. This web-based system combines real-time data visualization 
+            with interactive student engagement tools.
+        </p>
+
+        <h2>Our Mission</h2>
+        <p>
+            To empower students and faculty with data-driven insights into campus energy consumption, waste management, and carbon 
+            footprint, fostering a culture of sustainability and environmental responsibility.
+        </p>
+
+        <h2>Key Features</h2>
+        <div class="features">
+            <div class="feature-card">
+                <h3>⚡ Energy Monitoring</h3>
+                <p>Real-time tracking of campus energy usage, solar generation, and renewable energy integration.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>♻️ Waste Management</h3>
+                <p>Monitor waste levels across campus buildings with detailed recycling and composting analytics.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>🌱 Student Engagement</h3>
+                <p>Interactive personal energy dashboard where students can control devices and earn eco-points for sustainable actions.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>📊 Analytics & Reports</h3>
+                <p>Comprehensive dashboards for professors and administrators to track campus-wide environmental metrics.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>🎓 Educational Content</h3>
+                <p>Learn about sustainability practices, carbon footprint reduction, and renewable energy technologies.</p>
+            </div>
+
+            <div class="feature-card">
+                <h3>🎯 Goal Tracking</h3>
+                <p>Set and monitor campus sustainability goals with real-time progress tracking and achievable milestones.</p>
+            </div>
+        </div>
+
+        <h2>Technology</h2>
+        <p>
+            Eco Pulse is built with modern web technologies including HTML5, CSS3, and vanilla JavaScript for the frontend, 
+            with Node.js and Express powering the backend. Real-time data synchronization is handled through Socket.IO for 
+            instant metric updates across all connected users.
+        </p>
+
+        <h2>How It Works</h2>
+        <p>
+            <strong>For Professors:</strong> Access a read-only dashboard displaying campus-wide energy usage, solar generation, 
+            waste levels, and carbon metrics. Use the data to inform sustainability initiatives and educational curriculum.
+        </p>
+        <p>
+            <strong>For Students:</strong> Access your personal energy control interface to toggle chargers and lights ON/OFF. 
+            Receive rule-based notifications and earn eco-points for optimizing energy usage and making sustainable choices.
+        </p>
+
+        <h2>Simulation Note</h2>
+        <p>
+            Please note that all data in Eco Pulse is <strong>simulated for demonstration purposes</strong>. This is a proof-of-concept 
+            application designed to showcase how real campus data would be visualized and analyzed in a production environment.
+        </p>
+    </div>
+</body>
+</html>
+
+

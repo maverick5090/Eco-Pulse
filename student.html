@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Energy Simulation - Eco Pulse</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="navbar-injector.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #e8f4f8;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        nav {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0 24px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 64px;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a5490;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #1a5490;
+        }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .user-info {
+            text-align: right;
+            font-size: 0.9rem;
+        }
+
+        .user-info .username {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .user-info .role {
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        .logout-btn {
+            padding: 8px 16px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #d32f2f;
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 24px;
+        }
+
+        h1 {
+            font-size: 2rem;
+            color: #1a5490;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 32px;
+        }
+
+        /* Grid Layout */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .card h2 {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-content {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        /* Controls */
+        .control-group {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #eee;
+        }
+
+        .control-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .toggle-switch {
+            width: 50px;
+            height: 26px;
+            background: #ccc;
+            border-radius: 13px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #4caf50;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: left 0.3s;
+        }
+
+        .toggle-switch.active::after {
+            left: 26px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 12px;
+        }
+
+        .status-on {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .status-off {
+            background: #f1f1f1;
+            color: #666;
+        }
+
+        /* Eco Points */
+        .eco-points {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #4caf50;
+            margin: 12px 0;
+        }
+
+        .points-description {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        /* Notifications */
+        .notifications {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        }
+
+        .notifications h2 {
+            margin-bottom: 16px;
+            color: #333;
+        }
+
+        .notification-item {
+            padding: 12px;
+            border-left: 4px solid #ffc107;
+            background: #fffbf0;
+            margin-bottom: 12px;
+            border-radius: 4px;
+            color: #666;
+        }
+
+        .notification-item.warning {
+            border-left-color: #ff9800;
+        }
+
+        .notification-item.success {
+            border-left-color: #4caf50;
+            background: #f1f8f5;
+        }
+
+        .simulation-badge {
+            display: inline-block;
+            background: #e3f2fd;
+            color: #1565c0;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div>
+            <h1>Student Energy Simulation <span class="simulation-badge">SIMULATION</span></h1>
+            <p class="subtitle">This is a simulated environment. Control your personal energy usage and earn eco points</p>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div class="dashboard-grid">
+            <!-- Charger Control -->
+            <div class="card">
+                <h2>⚡ Charger</h2>
+                <div class="card-content">
+                    <p id="chargerStatus">Status: Off</p>
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Toggle Charger:</span>
+                            <div class="toggle-switch" id="chargerToggle"></div>
+                        </div>
+                    </div>
+                    <div id="chargerWarning" style="display: none; margin-top: 12px; padding: 12px; background: #fff3cd; border-radius: 6px; color: #856404; font-size: 0.9rem;">
+                        ⚠️ Charger has been ON for too long. Consider turning it off to save energy.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lights Control -->
+            <div class="card">
+                <h2>💡 Lights</h2>
+                <div class="card-content">
+                    <p id="lightsStatus">Status: Off</p>
+                    <div class="control-group">
+                        <div class="control-label">
+                            <span>Toggle Lights:</span>
+                            <div class="toggle-switch" id="lightsToggle"></div>
+                        </div>
+                    </div>
+                    <div id="lightsWarning" style="display: none; margin-top: 12px; padding: 12px; background: #fff3cd; border-radius: 6px; color: #856404; font-size: 0.9rem;">
+                        ⚠️ Lights are ON during daytime. Natural light is available.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Eco Points -->
+            <div class="card">
+                <h2>🌱 Eco Points</h2>
+                <div class="card-content">
+                    <div style="margin-bottom: 16px;">
+                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 4px;">Total Points</p>
+                        <div class="eco-points" id="ecoPointsTotal">0</div>
+                    </div>
+                    <div style="padding-top: 12px; border-top: 1px solid #eee;">
+                        <p style="color: #666; font-size: 0.9rem; margin-bottom: 4px;">Today's Points</p>
+                        <div class="eco-points" id="ecoPointsToday" style="font-size: 1.8rem; color: #2196f3;">0</div>
+                    </div>
+                    <p class="points-description" style="margin-top: 12px;">Earn points by optimizing energy use</p>
+                    <ul style="margin-top: 12px; padding-left: 20px; color: #666; font-size: 0.9rem;">
+                        <li>Turn off charger: +5 pts</li>
+                        <li>Turn off lights (daytime): +3 pts</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="notifications">
+            <h2>📬 Notifications & Alerts</h2>
+            <div id="notificationsList">
+                <div class="notification-item success">
+                    ✓ Simulation started. All controls are ready.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // STUDENT SIMULATION STATE
+        // Tracks: charger/lights on/off, timestamps, eco points, rule violations
+        // All state persisted to localStorage
+
+        // State object structure
+        let simulationState = {
+            chargerOn: false,
+            chargerTurnedOnAt: null,  // timestamp when charger was turned ON
+            lightsOn: false,
+            lightsTurnedOnAt: null,   // timestamp when lights were turned ON
+            ecoPointsTotal: 0,        // cumulative total across all sessions
+            ecoPointsToday: 0,        // points earned today (resets daily)
+            lastLoginDate: new Date().toDateString(),
+            chargerDurationViolation: false,  // rule: charger ON > 3 minutes
+            chargerViolationTriggeredAt: null,  // timestamp when charger violation was triggered
+            lightsDaytimeViolation: false,     // rule: lights ON during 6am-6pm
+            lightsViolationTriggeredAt: null    // timestamp when lights violation was triggered
+        };
+
+        // ROLE-BASED PAGE PROTECTION
+        // Security: Only students can access this dashboard
+        // Professors attempting to access will be redirected to login
+        // This runs on page load before any controls are displayed
+        function initializeUser() {
+            const username = localStorage.getItem('username');
+            const userRole = localStorage.getItem('userRole');
+
+            // CRITICAL: Verify logged-in user is a student
+            // Prevent unauthorized access by professors
+            if (!username || userRole !== 'student') {
+                console.log('[SECURITY] Unauthorized access attempt to student dashboard');
+                // Redirect to login immediately
+                window.location.href = 'login.html';
+                return;
+            }
+
+            console.log(`[SECURITY] Student '${username}' accessed personal dashboard`);
+        }
+
+        // Load simulation state from localStorage
+        function loadSimulationState() {
+            const saved = localStorage.getItem('simulationState');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    simulationState = parsed;
+
+                    // Reset today's points if it's a new day
+                    const today = new Date().toDateString();
+                    if (simulationState.lastLoginDate !== today) {
+                        simulationState.ecoPointsToday = 0;
+                        simulationState.lastLoginDate = today;
+                    }
+                } catch (e) {
+                    console.error('[SIMULATION] Error loading state:', e);
+                }
+            }
+        }
+
+        // Save simulation state to localStorage
+        function saveSimulationState() {
+            try {
+                localStorage.setItem('simulationState', JSON.stringify(simulationState));
+            } catch (e) {
+                console.error('[SIMULATION] Error saving state:', e);
+            }
+        }
+
+        // DOM elements
+        const chargerToggle = document.getElementById('chargerToggle');
+        const lightsToggle = document.getElementById('lightsToggle');
+        const chargerStatus = document.getElementById('chargerStatus');
+        const lightsStatus = document.getElementById('lightsStatus');
+        const chargerWarning = document.getElementById('chargerWarning');
+        const lightsWarning = document.getElementById('lightsWarning');
+        const ecoPointsTotalDisplay = document.getElementById('ecoPointsTotal');
+        const ecoPointsTodayDisplay = document.getElementById('ecoPointsToday');
+        const notificationsList = document.getElementById('notificationsList');
+
+        // CHARGER TOGGLE HANDLER
+        // When clicked: update state, capture timestamp, update UI, award eco points, persist state
+        chargerToggle.addEventListener('click', function() {
+            // Toggle charger state
+            simulationState.chargerOn = !simulationState.chargerOn;
+
+            // Handle timestamp tracking
+            if (simulationState.chargerOn) {
+                // Charger turned ON: capture current timestamp (ISO format)
+                simulationState.chargerTurnedOnAt = new Date().toISOString();
+                logNotification('⚡ Charger turned ON');
+            } else {
+                // Charger turned OFF: clear the timestamp and check for eco points
+                simulationState.chargerTurnedOnAt = null;
+                logNotification('⚡ Charger turned OFF');
+
+                // ECO POINTS: Award points if charger was violating a rule
+                if (simulationState.chargerDurationViolation && simulationState.chargerViolationTriggeredAt) {
+                    const violationTime = new Date(simulationState.chargerViolationTriggeredAt);
+                    const nowTime = new Date();
+                    const secondsSinceViolation = (nowTime - violationTime) / 1000;
+                    const minutesSinceViolation = secondsSinceViolation / 60;
+
+                    let pointsAwarded = 0;
+                    let bonusMessage = '';
+
+                    // Award +10 bonus points if action taken within 2 minutes
+                    if (minutesSinceViolation <= 2) {
+                        pointsAwarded = 10;
+                        bonusMessage = ' (Bonus +10 for quick action!)';
+                    } else {
+                        // Award +5 points for turning off after violation
+                        pointsAwarded = 5;
+                    }
+
+                    simulationState.ecoPointsTotal += pointsAwarded;
+                    simulationState.ecoPointsToday += pointsAwarded;
+                    updateEcoPointsDisplay();
+                    logNotification(`🎉 +${pointsAwarded} eco points earned${bonusMessage}`);
+                }
+            }
+
+            // Update UI immediately to reflect state change
+            updateChargerStatus();
+
+            // Persist state to localStorage
+            saveSimulationState();
+        });
+
+        // LIGHTS TOGGLE HANDLER
+        // When clicked: update state, capture timestamp, update UI, award eco points, persist state
+        lightsToggle.addEventListener('click', function() {
+            // Toggle lights state
+            simulationState.lightsOn = !simulationState.lightsOn;
+
+            // Handle timestamp tracking
+            if (simulationState.lightsOn) {
+                // Lights turned ON: capture current timestamp (ISO format)
+                simulationState.lightsTurnedOnAt = new Date().toISOString();
+                logNotification('💡 Lights turned ON');
+            } else {
+                // Lights turned OFF: clear the timestamp and check for eco points
+                simulationState.lightsTurnedOnAt = null;
+                logNotification('💡 Lights turned OFF');
+
+                // ECO POINTS: Award points if lights were violating a rule
+                if (simulationState.lightsDaytimeViolation && simulationState.lightsViolationTriggeredAt) {
+                    const violationTime = new Date(simulationState.lightsViolationTriggeredAt);
+                    const nowTime = new Date();
+                    const secondsSinceViolation = (nowTime - violationTime) / 1000;
+                    const minutesSinceViolation = secondsSinceViolation / 60;
+
+                    let pointsAwarded = 0;
+                    let bonusMessage = '';
+
+                    // Award +10 bonus points if action taken within 2 minutes
+                    if (minutesSinceViolation <= 2) {
+                        pointsAwarded = 10;
+                        bonusMessage = ' (Bonus +10 for quick action!)';
+                    } else {
+                        // Award +5 points for turning off after violation
+                        pointsAwarded = 5;
+                    }
+
+                    simulationState.ecoPointsTotal += pointsAwarded;
+                    simulationState.ecoPointsToday += pointsAwarded;
+                    updateEcoPointsDisplay();
+                    logNotification(`🎉 +${pointsAwarded} eco points earned${bonusMessage}`);
+                }
+            }
+
+            // Update UI immediately to reflect state change
+            updateLightsStatus();
+
+            // Persist state to localStorage
+            saveSimulationState();
+        });
+
+        // UPDATE CHARGER UI
+        // Refreshes charger toggle appearance and status text based on current state
+        function updateChargerStatus() {
+            const isOn = simulationState.chargerOn;
+            chargerToggle.classList.toggle('active', isOn);
+            chargerStatus.textContent = `Status: ${isOn ? 'On' : 'Off'}`;
+
+            // Show/hide charger warning based on duration
+            checkChargerDuration();
+        }
+
+        // UPDATE LIGHTS UI
+        // Refreshes lights toggle appearance and status text based on current state
+        function updateLightsStatus() {
+            const isOn = simulationState.lightsOn;
+            lightsToggle.classList.toggle('active', isOn);
+            lightsStatus.textContent = `Status: ${isOn ? 'On' : 'Off'}`;
+
+            // Show/hide lights warning based on time of day
+            checkLightsTimeOfDay();
+        }
+
+        // CHECK CHARGER DURATION
+        // Rule: warn if charger has been ON for more than 3 minutes
+        // Capture violation trigger time for eco points calculation
+        function checkChargerDuration() {
+            if (!simulationState.chargerOn || !simulationState.chargerTurnedOnAt) {
+                // Charger is OFF: clear any previous violation
+                if (simulationState.chargerDurationViolation) {
+                    simulationState.chargerDurationViolation = false;
+                    simulationState.chargerViolationTriggeredAt = null;
+                    logNotification('✓ Charger now OFF - rule resolved');
+                    saveSimulationState();
+                }
+                chargerWarning.style.display = 'none';
+                return;
+            }
+
+            // Charger is ON: check duration
+            const turnedOnTime = new Date(simulationState.chargerTurnedOnAt);
+            const nowTime = new Date();
+            const durationMinutes = (nowTime - turnedOnTime) / (1000 * 60);
+
+            // Rule violation: charger ON for > 3 minutes
+            if (durationMinutes > 3) {
+                chargerWarning.style.display = 'block';
+
+                // Log notification only when rule is first triggered
+                if (!simulationState.chargerDurationViolation) {
+                    simulationState.chargerDurationViolation = true;
+                    // Capture the exact time when violation was triggered (for eco points calculation)
+                    simulationState.chargerViolationTriggeredAt = new Date().toISOString();
+                    logNotification('⚠️ Charger has been ON for too long. Turn it OFF to save energy.');
+                    saveSimulationState();
+                }
+            } else {
+                chargerWarning.style.display = 'none';
+                // Clear violation flag if charger hasn't exceeded time yet
+                if (simulationState.chargerDurationViolation) {
+                    simulationState.chargerDurationViolation = false;
+                    simulationState.chargerViolationTriggeredAt = null;
+                    saveSimulationState();
+                }
+            }
+        }
+
+        // CHECK LIGHTS TIME OF DAY
+        // Rule: warn if lights are ON during daytime (6am - 6pm)
+        // Capture violation trigger time for eco points calculation
+        function checkLightsTimeOfDay() {
+            if (!simulationState.lightsOn) {
+                // Lights are OFF: clear any previous violation
+                if (simulationState.lightsDaytimeViolation) {
+                    simulationState.lightsDaytimeViolation = false;
+                    simulationState.lightsViolationTriggeredAt = null;
+                    logNotification('✓ Lights now OFF - natural light available');
+                    saveSimulationState();
+                }
+                lightsWarning.style.display = 'none';
+                return;
+            }
+
+            // Lights are ON: check time of day
+            const currentHour = new Date().getHours();
+            const isDaytime = currentHour >= 6 && currentHour < 18;
+
+            // Rule violation: lights ON during daytime
+            if (isDaytime) {
+                lightsWarning.style.display = 'block';
+
+                // Log notification only when rule is first triggered
+                if (!simulationState.lightsDaytimeViolation) {
+                    simulationState.lightsDaytimeViolation = true;
+                    // Capture the exact time when violation was triggered (for eco points calculation)
+                    simulationState.lightsViolationTriggeredAt = new Date().toISOString();
+                    logNotification('⚠️ Lights are ON during daytime. Natural light is available.');
+                    saveSimulationState();
+                }
+            } else {
+                lightsWarning.style.display = 'none';
+                // Clear violation flag if not daytime
+                if (simulationState.lightsDaytimeViolation) {
+                    simulationState.lightsDaytimeViolation = false;
+                    simulationState.lightsViolationTriggeredAt = null;
+                    saveSimulationState();
+                }
+            }
+        }
+
+        // MONITOR SIMULATION STATE
+        // Run periodically to check for rule violations and update warnings
+        function monitorSimulationState() {
+            checkChargerDuration();
+            checkLightsTimeOfDay();
+        }
+
+        function logNotification(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const notifEl = document.createElement('div');
+            notifEl.className = 'notification-item';
+            notifEl.textContent = `[${timestamp}] ${message}`;
+            notificationsList.insertBefore(notifEl, notificationsList.firstChild);
+        }
+
+        function updateEcoPointsDisplay() {
+            ecoPointsTotalDisplay.textContent = simulationState.ecoPointsTotal;
+            ecoPointsTodayDisplay.textContent = simulationState.ecoPointsToday;
+        }
+
+        function logout() {
+            localStorage.removeItem('simulationState');
+            localStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        // INITIALIZATION SEQUENCE
+        // 1. FIRST: Verify user role (blocks unauthorized access immediately)
+        // 2. Load saved simulation state from localStorage
+        // 3. Render UI based on state
+        // 4. Start monitoring simulation
+        initializeUser();  // ROLE CHECK FIRST - redirects if not student
+        loadSimulationState();
+        updateChargerStatus();
+        updateLightsStatus();
+        updateEcoPointsDisplay();
+        logNotification('✓ Simulation loaded. This is a demo environment.');
+
+        // Start monitoring simulation state every 2 seconds
+        // This checks for rule violations and updates warnings in real-time
+        setInterval(monitorSimulationState, 2000);
+        console.log('[READY] Student dashboard initialized successfully');
+    </script>
+</body>
+</html>

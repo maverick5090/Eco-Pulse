@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carbon Credits - Eco Pulse</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <script src="navbar-injector.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #e8f4f8;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 16px 64px;
+        }
+
+        h1 {
+            color: #1a5490;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 1.9rem;
+            font-weight: 600;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 28px;
+            font-size: 0.95rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-left: 4px solid #1a5490;
+            padding: 20px;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .metric {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 2.4rem;
+            font-weight: 600;
+            color: #1a5490;
+        }
+
+        .metric-unit {
+            font-size: 0.95rem;
+            color: #666;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        .calculator {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: #333;
+            margin-bottom: 6px;
+            display: block;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .calc-result {
+            margin-top: 12px;
+            background: #f5fbff;
+            border: 1px solid #d6e9f8;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            color: #1a5490;
+            font-weight: 600;
+        }
+
+        .note {
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #777;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px 12px 48px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="navbar-container"></div>
+
+    <div class="container">
+        <h1>Carbon Credits</h1>
+        <p class="subtitle">Real-time carbon emissions and a quick credit calculator</p>
+
+        <div class="grid">
+            <div class="card">
+                <h2>Real-Time Carbon Emissions</h2>
+                <div class="metric">
+                    <div class="metric-value" id="carbonEmission">-</div>
+                    <div class="metric-unit">tonnes CO2e</div>
+                </div>
+                <div class="muted">Updated from simulated campus data.</div>
+                <div class="note" id="carbonUpdated">Last update: -</div>
+            </div>
+
+            <div class="card">
+                <h2>Carbon Credit Calculator</h2>
+                <div class="muted">Estimate credits needed to offset emissions.</div>
+
+                <div class="calculator">
+                    <div>
+                        <label for="units">Units</label>
+                        <input type="number" id="units" min="0" step="0.1" value="1">
+                    </div>
+                </div>
+
+                <div class="calc-result" id="carbonResult">CO2 Emission: 0.82 kg</div>
+                <div class="note"> </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            'use strict';
+
+            function initializeUser() {
+                const username = localStorage.getItem('username');
+                const userRole = localStorage.getItem('userRole');
+
+                if (!username || userRole !== 'professor') {
+                    window.location.href = 'login.html';
+                    return false;
+                }
+                return true;
+            }
+
+            function calcCarbon() {
+                const units = parseFloat(document.getElementById('units').value || '0');
+                const res = (units * 0.82).toFixed(2);
+                document.getElementById('carbonResult').innerText = 'CO2 Emission: ' + res + ' kg';
+            }
+
+            function updateRealtime(data) {
+                if (!data || data.carbonScore === undefined) {
+                    return;
+                }
+
+                const value = Number(data.carbonScore);
+                const display = Number.isFinite(value) ? value.toFixed(1) : '-';
+                document.getElementById('carbonEmission').textContent = display;
+                document.getElementById('carbonUpdated').textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+            }
+
+            if (!initializeUser()) {
+                return;
+            }
+
+            document.getElementById('units').addEventListener('input', calcCarbon);
+            calcCarbon();
+
+            // Hook into shared data updates if present
+            window.addEventListener('ecoPulseDataUpdate', function(event) {
+                updateRealtime(event.detail);
+            });
+
+            // Fallback to socket directly if shared.js isn't on the page
+            if (typeof io !== 'undefined') {
+                const socket = io('http://localhost:5000');
+                socket.on('campusData', updateRealtime);
+            }
+        })();
+    </script>
+</body>
+</html>
